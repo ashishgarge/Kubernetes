@@ -1,9 +1,18 @@
 #!/bin/bash
 
 #sudo apt update && sudo apt upgrade -y
+
+#install dependencies
+
 sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+
+#Disabled Swap
+
 sudo swapoff -a
 sudo sed -i '/ swap / s/^/#/' /etc/fstab
+
+# Load Required kernel Modules
+
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
@@ -17,10 +26,12 @@ net.bridge.bridge-nf-call-iptables  = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward                 = 1
 EOF
-
 sudo sysctl --system
+
+#Install containerD
 sudo apt install -y containerd
 
+#Configure ContainerD
 sudo mkdir -p /etc/containerd
 sudo containerd config default | sudo tee /etc/containerd/config.toml
 
@@ -29,6 +40,8 @@ sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/conf
 
 sudo systemctl restart containerd
 sudo systemctl enable containerd
+
+#Install Kubernetes Components
 
 # Create a keyring directory
 sudo mkdir -p /etc/apt/keyrings
@@ -48,6 +61,7 @@ sudo apt update -y
 sudo apt install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 
+#Initialize the Kubernetes Cluster and below command will show the kubeadm join command for worker nodes. Copy and save it.
 sudo kubeadm init --pod-network-cidr=192.168.0.0/16
 
 mkdir -p $HOME/.kube
